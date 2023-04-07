@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html data-theme="dark" lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.*/css/pico.min.css">
+  <link rel="stylesheet" href="style.css">
+  <title>OpenAI API Frontend</title>
+</head>
+<body>
+    <nav>
+      <a href="#">Home</a>
+      <a href="#">About</a>
+      <a href="#">Contact Me</a>
+    </nav>
+  
+    <div class="container">
+      <div class="left-half">
+        <div class="input-group">
+          <input type="password" id="api-key" placeholder="API Key" />
+          <details id="models-dropdown" role="list">
+            <summary id="models-dropdown-button" aria-haspopup="listbox">
+              Select Model
+            </summary>
+            <ul role="listbox"></ul>
+          </details>
+        </div>
+        <input type="text" id="context" placeholder="Context Prompt" />
+        <div id="summarize-by-container">
+          <input type="text" id="summarize-by" placeholder="Summarize By" />
+        </div>
+        <textarea id="content" placeholder="Text / URL / File"></textarea>
+        <div class="button-group">
+          <button id="submit" type="button">Submit</button>
+          <button id="file-upload" type="button">File Upload</button>
+        </div>
+      </div>
+  
+      <div class="middle-bar"></div>
+  
+      <div class="right-half" id="output-container"></div>
+    </div>
+  
+    <script src="main.js"></script>
+  </body>
+    </html>
+    
