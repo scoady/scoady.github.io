@@ -48,30 +48,33 @@ function clearPreviousResults() {
 let jsonBuffer = '';
 
 function processChunk(chunk, jsonBuffer, onText) {
-  jsonBuffer += chunk;
-  let startIndex = jsonBuffer.indexOf("{");
-  let endIndex = jsonBuffer.indexOf("}\n");
+  let localJsonBuffer = jsonBuffer + chunk;
+  const jsonRegex = /{[\s\S]*?}\n/g;
 
-  while (startIndex >= 0 && endIndex >= 0) {
-    const jsonString = jsonBuffer.substring(startIndex, endIndex + 1);
+  let match;
+  while ((match = jsonRegex.exec(localJsonBuffer)) !== null) {
+    const jsonString = match[0];
     try {
+      console.log("Processing JSON:", jsonString);
       const parsedJson = JSON.parse(jsonString);
       onText(parsedJson.choices[0].text);
-      jsonBuffer = jsonBuffer.substring(endIndex + 2);
-      startIndex = jsonBuffer.indexOf("{");
-      endIndex = jsonBuffer.indexOf("}\n");
+      localJsonBuffer = localJsonBuffer.substring(jsonRegex.lastIndex);
     } catch (error) {
       console.error("Error while parsing JSON:", error.message);
-      return { isCompleted: false, newJsonBuffer: jsonBuffer };
+      return { isCompleted: false, newJsonBuffer: localJsonBuffer };
     }
   }
 
-  if (jsonBuffer.includes("data: [DONE]")) {
+  if (localJsonBuffer.includes("data: [DONE]")) {
     return { isCompleted: true, newJsonBuffer: "" };
   } else {
-    return { isCompleted: false, newJsonBuffer: jsonBuffer };
+    return { isCompleted: false, newJsonBuffer: localJsonBuffer };
   }
 }
+
+
+
+
 
 
 
@@ -276,7 +279,7 @@ function getTags() {
     showLoadingIndicator(tags);
   
     if (contentInput.startsWith("http://") || contentInput.startsWith("https://")) {
-      inputText = await fetchContent(contentInput);
+      inputText =  context;
     } else if (fileContent) {
       inputText = fileContent;
     } else {
@@ -292,49 +295,91 @@ function getTags() {
       alert("Please provide content to analyze.");
       return;
     }
-    const inputTextEncoded = JSON.stringify(inputText);
-    const prompt = `Content To Analyze: ${inputTextEncoded}, Analysis Context: "${context}", Response format: tag: response  where tags: "${combinedTags}. Provide your answer in JSON with only the requested tag categorization.`;
   
-    try {
-      const requestOptions = {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          prompt: prompt,
-          max_tokens: 100,
-          n: 1,
-          model: model,
-          temperature: 0.8,
-          stream: true,
-        }),
-      };
+    const chunkSize = 2048;
+    const overlap = 500;
+    const inputChunks = [];
   
-      let jsonBuffer = "";
-      let accumulatedText = "";
-  
-      await streamRequest("https://api.openai.com/v1/completions", requestOptions, (chunk) => {
-        const { isCompleted, newJsonBuffer } = processChunk(chunk, jsonBuffer, (textPart) => {
-          accumulatedText += textPart;
-        });
-        jsonBuffer = newJsonBuffer;
-  
-        if (isCompleted) {
-          console.log("Completed processing JSON.");
-          const parsedResult = JSON.parse(accumulatedText);
-          displayResults(parsedResult);
-          showSummary(parsedResult, tags);
-        }
-      });
-    } catch (error) {
-      console.error("Error:", error);
-      fileContent = "";
+    for (let i = 0; i < inputText.length; i += chunkSize - overlap) {
+      const start = i === 0 ? i : i - overlap;
+      const end = Math.min(i + chunkSize, inputText.length);
+      inputChunks.push(inputText.slice(start, end));
     }
+  
+    let finalOutput = "";
+    let parsedResults = [];
+  
+    for (let chunkIndex = 0; chunkIndex < inputChunks.length; chunkIndex++) {
+      const chunk = inputChunks[chunkIndex];
+      const prompt = `Analyze: ${chunk}, Analysis Context: "${context}", Response format: tag: response  where tags: "${combinedTags}. Provide your answer in JSON with only the requested tag categorization.`;
+  
+      try {
+        const requestOptions = {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            prompt: prompt,
+            max_tokens: 100,
+            n: 1,
+            model: model,
+            temperature: 0.8,
+            stream: true,
+          }),
+        };
+  
+        let jsonBuffer = "";
+        let accumulatedText = "";
+  
+        await streamRequest("https://api.openai.com/v1/completions", requestOptions, (chunk) => {
+          const { isCompleted, newJsonBuffer } = processChunk(chunk, jsonBuffer, (textPart) => {
+            accumulatedText += textPart;
+          });
+          jsonBuffer = newJsonBuffer;
+  
+          if (isCompleted) {
+            console.log("Completed processing JSON.");
+            if (isValidJSON(accumulatedText)) {
+              const parsedResult = JSON.parse(accumulatedText);
+              parsedResults.push(parsedResult);
+            } else {
+              console.log("Invalid JSON:", accumulatedText);
+            }
+          }
+        });
+  
+        if (chunkIndex > 0) {
+          const startIndex = overlap;
+          const endIndex = chunk.length;
+          finalOutput += accumulatedText.slice(startIndex, endIndex);
+        } else {
+          finalOutput += accumulatedText;
+        }
+      } catch (error) {
+        console.log('Failed to parse JSON:', jsonString);
+        console.error("Error:", error);
+        fileContent = "";
+      }
+    }
+  
+  // Display the final output and results after processing all chunks
+  console.log("Final Output:", finalOutput);
+  parsedResults.forEach(parsedResult => {
+    displayResults(parsedResult);
+    showSummary(parsedResult, tags);
+  });
+}
+
+function isValidJSON(text) {
+  try {
+    JSON.parse(text);
+    return true;
+  } catch {
+    return false;
   }
-  
-  
+}
   
   
   
