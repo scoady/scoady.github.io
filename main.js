@@ -329,16 +329,17 @@ function createTag(text) {
           }
         }
       });
-    summarizeByInput.addEventListener('input', (event) => {
-    if (event.data === ',') {
-        const tagText = event.target.value.slice(0, -1).trim();
-        if (tagText) {
-        createTag(tagText);
-        // Clear the input field after creating a tag
-        event.target.value = '';
+      summarizeByInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Tab') {
+          event.preventDefault();
+          const tagText = event.target.value.trim();
+          if (tagText) {
+            createTag(tagText);
+            // Clear the input field after creating a tag
+            event.target.value = '';
+          }
         }
-    }
-    });
+      });
 
 
     submitButton.addEventListener('click', async (e) => {
