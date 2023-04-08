@@ -107,7 +107,41 @@ async function handleInput() {
     }
   } else {
     const apiKey = localStorage.getItem("apiKey");
-    if (apiKey) {
+    const selectedModel = getSelectedModel();
+
+    if (apiKey && selectedModel) {
+      try {
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: selectedModel,
+            messages: [
+              {
+                "role": "system",
+                "content": "You are a helpful assistant."
+              },
+              {
+                "role": "user",
+                "content": input
+              }]
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const assistantMessage = data.choices[0].message.content.trim();
+          renderOutput(assistantMessage);
+        } else {
+          throw new Error("Request failed");
+        }
+      } catch (error) {
+        renderOutput("[ GPT ] There was an error processing your request. Please try again.");
+      }
+    } else if (apiKey) {
       const maskedApiKey = apiKey.slice(0, 4) + "****" + apiKey.slice(-4);
       renderOutput(`You said: ${input} (API key: ${maskedApiKey})`);
     } else {
@@ -116,6 +150,7 @@ async function handleInput() {
   }
   renderPrompt();
 }
+
 
 
 function handleKeydown(event) {
