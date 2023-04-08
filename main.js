@@ -7,6 +7,7 @@ const outputContainer = document.getElementById('output-container');
 const summarizeByInput = document.getElementById('summarize-by');
 const summarizeByContainer = document.getElementById('summarize-by-container');
 const dataTags = document.getElementsByTagName('data-tags');
+let fileContent = ''; // Move this line to the outer scope
 
 async function getModels(apiKey) {
   const response = await fetch('https://api.openai.com/v1/models', {
@@ -195,22 +196,32 @@ function getTags() {
   
 
   async function handleSubmit(e) {
-  
+    let inputText = '';
     const apiKey = document.querySelector("#api-key").value;
     const model = document.querySelector("#models-dropdown").getAttribute("data-selected-model");
     const context = document.querySelector("#context").value;
-    const content = document.querySelector("#content").value;
+    const contentInput = document.getElementById('content').value;
     const combinedTags = getTags().join(", ");
     const tags = getTags();
     showLoadingIndicator(tags);
+
+
+    if (contentInput.startsWith('http://') || contentInput.startsWith('https://')) {
+      inputText = await fetchContent(contentInput);
+    } else if (fileContent) {
+      inputText = fileContent;
+    } else {
+      inputText = contentInput;
+    }
 
     if (!model) {
       alert("Please pick a model first.");
       return;
     }
   
-    const prompt = `Content To Analyze: "${content}", Analysis Context: "${context}", Response format: tag: response  where tags: "${combinedTags}. Provide your answer in JSON with only the requested tag categorization.`;
-  
+    const inputTextEncoded = JSON.stringify(inputText);
+    const prompt = `Content To Analyze: ${inputTextEncoded}, Analysis Context: "${context}", Response format: tag: response  where tags: "${combinedTags}. Provide your answer in JSON with only the requested tag categorization.`;
+      
   
     try {
       const response = await fetch(`https://api.openai.com/v1/completions`, {
@@ -241,10 +252,14 @@ function getTags() {
       console.log(response);
       showSummary(summary, tags); // Pass tags as an argument
       displayResults(data);
+      fileContent = '';
+
 
     
     } catch (error) {
       console.error("Error:", error);
+      fileContent = '';
+
     }
   }
   
@@ -268,6 +283,26 @@ function createTag(text) {
   document.addEventListener('DOMContentLoaded', () => {
     // ... Rest of your event listeners ...
   
+    const urlInput = document.getElementById("content"); // Assuming "content" is the id of the URL input field
+    const fileInput = document.getElementById('file-upload');
+    const textInput = document.getElementById("content");
+
+
+
+
+    
+    fileInput.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          fileContent = e.target.result;
+        };
+        reader.readAsText(file);
+      }
+    });
+
+
     modelDropdownButton.addEventListener('click', () => {
       const filterInput = modelDropdown.querySelector("input");
       const filter = filterInput.value.toUpperCase();
