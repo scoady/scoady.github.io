@@ -111,6 +111,14 @@ nav a:hover {
     100% { opacity: 1; transform: scale(1); }
   }
   
+  .checkmark {
+    color: #4caf50;
+    font-size: 1.2rem;
+    vertical-align: middle;
+    margin-left: 5px;
+  }
+  
+
   .checkmark-circle {
     animation: checkmark 1s ease-in-out forwards;
     stroke-dasharray: 100;
