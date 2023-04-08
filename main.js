@@ -9,6 +9,78 @@ const summarizeByContainer = document.getElementById('summarize-by-container');
 const dataTags = document.getElementsByTagName('data-tags');
 let fileContent = ''; // Move this line to the outer scope
 
+
+
+async function streamRequest(url, options, onChunk) {
+  return new Promise(async (resolve, reject) => {
+    const response = await fetch(url, options);
+
+    if (!response.ok) {
+      reject(`API request failed: ${response.statusText}`);
+    }
+
+    const reader = response.body.getReader();
+    const textDecoder = new TextDecoder();
+
+    async function read() {
+      const { value, done } = await reader.read();
+
+      if (done) {
+        return resolve();
+      }
+
+      const chunk = textDecoder.decode(value);
+      onChunk(chunk);
+      console.log("Processed: " + chunk);
+      read();
+    }
+
+    read();
+  });
+}
+
+function clearPreviousResults() {
+  while (outputContainer.firstChild) {
+    outputContainer.removeChild(outputContainer.firstChild);
+  }
+}
+
+let jsonBuffer = '';
+
+function processChunk(chunk, jsonBuffer, onText) {
+  jsonBuffer += chunk;
+  let startIndex = jsonBuffer.indexOf("{");
+  let endIndex = jsonBuffer.indexOf("}\n");
+
+  while (startIndex >= 0 && endIndex >= 0) {
+    const jsonString = jsonBuffer.substring(startIndex, endIndex + 1);
+    try {
+      const parsedJson = JSON.parse(jsonString);
+      onText(parsedJson.choices[0].text);
+      jsonBuffer = jsonBuffer.substring(endIndex + 2);
+      startIndex = jsonBuffer.indexOf("{");
+      endIndex = jsonBuffer.indexOf("}\n");
+    } catch (error) {
+      console.error("Error while parsing JSON:", error.message);
+      return { isCompleted: false, newJsonBuffer: jsonBuffer };
+    }
+  }
+
+  if (jsonBuffer.includes("data: [DONE]")) {
+    return { isCompleted: true, newJsonBuffer: "" };
+  } else {
+    return { isCompleted: false, newJsonBuffer: jsonBuffer };
+  }
+}
+
+
+
+
+
+
+
+
+
 async function getModels(apiKey) {
   const response = await fetch('https://api.openai.com/v1/models', {
     method: 'GET',
@@ -26,6 +98,7 @@ async function getModels(apiKey) {
 }
 
 function createOutputCard(output, rawOutput) {
+  console.log("Output: " + output);
   const card = document.createElement("article");
   card.classList.add("output-pane");
 
@@ -54,18 +127,14 @@ function createOutputCard(output, rawOutput) {
 
 
 function displayResults(result) {
+  console.log("Result:", result);
   const formattedOutput = document.createElement("p");
   //formattedOutput.textContent = JSON.stringify(result);
   console.log("result" + JSON.stringify(result) );
 
 
   const performanceObject = {
-     timeToComplete : Math.floor((Date.now() / 1000) - result.created),
-     prompt_tokens : result.usage.prompt_tokens,
-     response_tokens : result.usage.completion_tokens,
-     total_tokens : result.usage.total_tokens,
-     model_used : result.model,
-     raw_result: result.choices[0].text
+     raw_result: result
   }
 
 
@@ -174,61 +243,64 @@ function getTags() {
   
     return tags;
   }
-  function showSummary(summary, tags) {
-    for (const tag in summary) {
-      const card = findCardByHeader(tag);
-      const cardBody = card.querySelector(".card-body");
-      cardBody.textContent = summary[tag];
-    }
-  
+  function showSummary(data, tags) {
+    console.log('Data:', data, 'Tags:', tags);
+
     tags.forEach(tag => {
-      updateLoadingIndicator(tag, false);
+      if (data[tag]) {
+        const card = findCardByHeader(tag);
+        
+        if (!card) {
+          console.error("Card not found for tag:", tag);
+          return;
+        }
+        
+        const cardBody = card.querySelector(".card-body");
+        cardBody.innerHTML = `<p>${data[tag]}</p>`;
+        
+        updateLoadingIndicator(tag, false);
+      }
     });
   }
-  
-  
-  
-  
-  
-  
-  
-  
   
 
   async function handleSubmit(e) {
     let inputText = '';
+    clearPreviousResults();
     const apiKey = document.querySelector("#api-key").value;
     const model = document.querySelector("#models-dropdown").getAttribute("data-selected-model");
     const context = document.querySelector("#context").value;
-    const contentInput = document.getElementById('content').value;
+    const contentInput = document.getElementById("content").value;
     const combinedTags = getTags().join(", ");
     const tags = getTags();
     showLoadingIndicator(tags);
-
-
-    if (contentInput.startsWith('http://') || contentInput.startsWith('https://')) {
+  
+    if (contentInput.startsWith("http://") || contentInput.startsWith("https://")) {
       inputText = await fetchContent(contentInput);
     } else if (fileContent) {
       inputText = fileContent;
     } else {
       inputText = contentInput;
     }
-
+  
     if (!model) {
       alert("Please pick a model first.");
       return;
     }
   
+    if (!inputText) {
+      alert("Please provide content to analyze.");
+      return;
+    }
     const inputTextEncoded = JSON.stringify(inputText);
     const prompt = `Content To Analyze: ${inputTextEncoded}, Analysis Context: "${context}", Response format: tag: response  where tags: "${combinedTags}. Provide your answer in JSON with only the requested tag categorization.`;
-      
   
     try {
-      const response = await fetch(`https://api.openai.com/v1/completions`, {
-        method: 'POST',
+      const requestOptions = {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
           prompt: prompt,
@@ -236,32 +308,35 @@ function getTags() {
           n: 1,
           model: model,
           temperature: 0.8,
-        })
+          stream: true,
+        }),
+      };
+  
+      let jsonBuffer = "";
+      let accumulatedText = "";
+  
+      await streamRequest("https://api.openai.com/v1/completions", requestOptions, (chunk) => {
+        const { isCompleted, newJsonBuffer } = processChunk(chunk, jsonBuffer, (textPart) => {
+          accumulatedText += textPart;
+        });
+        jsonBuffer = newJsonBuffer;
+  
+        if (isCompleted) {
+          console.log("Completed processing JSON.");
+          const parsedResult = JSON.parse(accumulatedText);
+          displayResults(parsedResult);
+          showSummary(parsedResult, tags);
+        }
       });
-  
-      if (!response.ok) {
-        throw new Error(`API request failed: ${response.statusText}`);
-      }
-  
-      const data = await response.json();
-      const summary = JSON.parse(data.choices[0].text);
-      getTags().forEach(tag => {
-        updateLoadingIndicator(tag, false);
-      });
-  
-      console.log(response);
-      showSummary(summary, tags); // Pass tags as an argument
-      displayResults(data);
-      fileContent = '';
-
-
-    
     } catch (error) {
       console.error("Error:", error);
-      fileContent = '';
-
+      fileContent = "";
     }
   }
+  
+  
+  
+  
   
 
 function createTag(text) {
@@ -380,7 +455,7 @@ function createTag(text) {
     submitButton.addEventListener('click', async (e) => {
         e.preventDefault();
         
-        submitButton.disabled = true;
+        submitButton.disabled = false;
         submitButton.textContent = 'Please wait...';
       
         await handleSubmit();
