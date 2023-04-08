@@ -15,6 +15,7 @@ async function processStream(reader) {
     const { done, value } = await reader.read();
 
     if (done) {
+      console.log("Stream ended");
       break;
     }
 
@@ -22,20 +23,24 @@ async function processStream(reader) {
     const strippedChunk = chunk.replace(/.*data: /s, '');
     console.log("Stripped chunk: " + strippedChunk);
 
+    if (strippedChunk.includes('[DONE]')) {
+      console.log("Stream ended");
+      break;
+    }
+
     try {
       const parsedChunk = JSON.parse(strippedChunk);
 
       if (parsedChunk.choices && parsedChunk.choices[0] && parsedChunk.choices[0].delta) {
         const content = parsedChunk.choices[0].delta.content;
-        if (content !== '[DONE]') {
-          renderOutput(content, false);
-        }
+        renderOutput(content, false);
       }
     } catch (error) {
       console.error("Error parsing data frame:", error);
     }
   }
 }
+
 
 
 
@@ -248,3 +253,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+
+// Add an event listener to the window that focuses on the input field whenever a key is pressed
+window.addEventListener("keydown", () => {
+  const input = document.querySelector("#terminal-textarea");
+  input.focus();
+});
