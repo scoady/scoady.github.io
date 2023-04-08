@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.*/css/pico.min.css">
+  <link rel="stylesheet" href="chat.css">
+  <link rel="stylesheet" href="nav.css">
+  <link rel="stylesheet" href="modal.css">
+</head>
+<body>
+  <!-- Include the nav.html file -->
+  <div id="nav-container"></div>
+  <main>
+    <div id="terminal-container">
+      <div id="terminal-header"></div>
+      <div id="terminal-body">
+        <div id="terminal-output"></div>
+        <div id="terminal-input">
+          <div id="terminal-prompt"></div>
+          <textarea id="terminal-textarea" rows="1"></textarea>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="chat.js"></script>
+  <script src="modal.js"></script>
+</body>
+</html>
