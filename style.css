@@ -1,8 +1,19 @@
-.nav {
-    width: 100%;
-    background-color: #f8f9fa;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
+nav {
+  background-color: #353535;
+  display: flex;
+  justify-content: space-around;
+  padding: 15px 0;
+}
+
+nav a {
+  color: #fff;
+  text-decoration: none;
+  font-size: 18px;
+}
+
+nav a:hover {
+  color: #ddd;
+}
 .output-pane {
     border: 1px solid #ccc;
     padding: 20px;
@@ -95,13 +106,9 @@
     display: none;
   }
 
-  @keyframes checkmark {
-    0% {
-      stroke-dashoffset: 100;
-    }
-    100% {
-      stroke-dashoffset: 0;
-    }
+  @keyframes checkmark-animation {
+    0% { opacity: 0; transform: scale(0); }
+    100% { opacity: 1; transform: scale(1); }
   }
   
   .checkmark-circle {

@@ -83,8 +83,8 @@ function createSpinner() {
   
 
   function updateLoadingIndicator(tag, isLoading) {
-    const tagHeader = outputContainer.querySelector(`div.card-header[data-tag="${tag}"]`);
-    if (tagHeader) { // Check if tagHeader is not null
+    const tagHeader = outputContainer.querySelector(`header.card-header[data-tag="${tag}"]`);
+    if (tagHeader) {
       const cardHeaderText = tagHeader.querySelector('.card-header > p.card-text');
       if (isLoading) {
         cardHeaderText.innerHTML = "Loading...";
@@ -92,6 +92,8 @@ function createSpinner() {
         const checkMark = document.createElement("span");
         checkMark.classList.add("checkmark");
         checkMark.innerHTML = "&#10003;";
+        checkMark.style.color = "green";
+        checkMark.style.animation = "checkmark-animation 1s";
         tagHeader.replaceChild(checkMark, tagHeader.querySelector(".spinner"));
       }
     }
