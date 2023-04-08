@@ -6,6 +6,46 @@ const history = [];
 let historyIndex = 0;
 
 
+
+async function processStream(reader) {
+  let utf8Decoder = new TextDecoder("utf-8");
+  let isFirstChunk = true;
+
+  while (true) {
+    const { done, value } = await reader.read();
+
+    if (done) {
+      break;
+    }
+
+    const chunk = utf8Decoder.decode(value);
+    const strippedChunk = chunk.replace(/.*data: /s, '');
+    console.log("Stripped chunk: " + strippedChunk);
+
+    try {
+      const parsedChunk = JSON.parse(strippedChunk);
+
+      if (parsedChunk.choices && parsedChunk.choices[0] && parsedChunk.choices[0].delta) {
+        const content = parsedChunk.choices[0].delta.content;
+        if (content !== '[DONE]') {
+          renderOutput(content, false);
+        }
+      }
+    } catch (error) {
+      console.error("Error parsing data frame:", error);
+    }
+  }
+}
+
+
+
+
+
+
+
+
+
+
 function hasSelectedModel() {
   return localStorage.getItem("selectedModel") !== null;
 }
@@ -14,8 +54,6 @@ function hasSelectedModel() {
 function getSelectedModel() {
   return localStorage.getItem("selectedModel");
 }
-
-
 
 async function loadNavBar() {
   const response = await fetch('nav.html');
@@ -36,16 +74,23 @@ function renderInput(input) {
   terminalOutput.appendChild(inputLine);
 }
 
-function renderOutput(output) {
-  const outputLine = document.createElement("p");
-  outputLine.classList.add("terminal-line");
-  
-  // Add the gpt.svg image prefix
-  outputLine.innerHTML = '<img src="gpt.svg" alt="GPT" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;">[ GPT model=' + getSelectedModel() + ' ] ' + output;
-  
-  terminalOutput.appendChild(outputLine);
-}
+function renderOutput(output, newLine = true) {
+  if (newLine) {
+    const outputLine = document.createElement("p");
+    outputLine.classList.add("terminal-line");
 
+    outputLine.innerHTML = '[<img src="gpt.svg" alt="GPT" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;">' + getSelectedModel() + ']:  ' + output;
+
+    terminalOutput.appendChild(outputLine);
+  } else {
+    const lastOutputLine = terminalOutput.lastElementChild;
+    if (lastOutputLine) {
+      lastOutputLine.innerHTML += output;
+    } else {
+      renderOutput(output);
+    }
+  }
+}
 // Check if an API key is already stored in localStorage
 function hasApiKey() {
   return localStorage.getItem("apiKey") !== null;
@@ -62,7 +107,6 @@ function getMaskedApiKey() {
   return apiKey.slice(0, 4) + "************";
 }
 
-
 // Validate the API key by making a request to the OpenAI API /models endpoint
 async function getModels(apiKey) {
   const response = await fetch("https://api.openai.com/v1/models", {
@@ -75,13 +119,16 @@ async function getModels(apiKey) {
   if (response.ok) {
     saveApiKey(apiKey);
     const data = await response.json();
-    return data.data; // Return the list of models
+    chatModels = data.data.filter(model =>
+      model.id.includes("gpt-")
+    );
+    console.log("GPT Models: " + chatModels);
+    //return data.data; // Return the list of models
+    return chatModels;
   } else {
     throw new Error("Invalid API key");
   }
 }
-
-
 
 async function handleInput() {
   const input = terminalTextarea.value;
@@ -93,6 +140,7 @@ async function handleInput() {
     terminalOutput.innerHTML = "";
   } else if (input.startsWith("apikey ")) {
     const apiKey = input.replace("apikey ", "").trim();
+
 
     try {
       const models = await getModels(apiKey);
@@ -109,6 +157,8 @@ async function handleInput() {
     const apiKey = localStorage.getItem("apiKey");
     const selectedModel = getSelectedModel();
 
+    renderOutput("",true);
+    renderPrompt();
     if (apiKey && selectedModel) {
       try {
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -127,14 +177,14 @@ async function handleInput() {
               {
                 "role": "user",
                 "content": input
-              }]
+              }],
+            stream: true,
           }),
         });
 
         if (response.ok) {
-          const data = await response.json();
-          const assistantMessage = data.choices[0].message.content.trim();
-          renderOutput(assistantMessage);
+          const reader = response.body.getReader();
+          await processStream(reader);
         } else {
           throw new Error("Request failed");
         }
@@ -150,6 +200,8 @@ async function handleInput() {
   }
   renderPrompt();
 }
+
+
 
 
 
@@ -195,5 +247,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 });
-
 
