@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-powered HTML Generator</title>
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@1.*/css/pico.min.css">
+    <link rel="stylesheet" href="html-generator.css">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+    <style>
+        #modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        #modalContent {
+            background-color: #f0f0f0;
+            margin: 15% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            height: 70%;
+        }
+        iframe {
+            width: 100%;
+            height: calc(100% - 30px); /* Adjust height based on remaining space */
+            border: none;
+        }
+        #promptHistory {
+            display: none;
+            background-color: #f0f0f0;
+            padding: 10px;
+            overflow-y: auto;
+        }
+    </style>
+    
+</head>
+<body>
+    <div id="apiKeySection">
+        <h2>Enter your OpenAI API Key</h2>
+        <input type="password" id="apiKeyInput" placeholder="API Key">
+        <button id="apiKeySubmit">Submit</button>
+    </div>
+
+    <div id="generatorSection" style="display: none;">
+        <h2>Prompt</h2>
+        <textarea id="promptInput" rows="4"></textarea>
+        <button id="summarizePrompt">Summarize Prompt History</button>
+        <button id="toggleHistory">Toggle Prompt History</button>
+        <ul id="promptHistory"></ul>
+        <button id="generateHTML" class="btn btn-primary">Generate HTML</button>
+        <div id="thumbnailContainer">
+            <!-- Thumbnails will be dynamically added here -->
+        </div>
+        <div id="modal">
+            <div id="modalContent">
+                <iframe id="generatedHTML"></iframe>
+                <button id="closeIframe">Close</button>
+                <button id="downloadHTML">Download HTML</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="html-generator.js"></script>
+</body>
+</html>

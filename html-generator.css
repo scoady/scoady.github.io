@@ -1,0 +1,8 @@
+.thumbnail {
+    width: 300px; /* Adjust the width as desired */
+    height: 200px; /* Adjust the height as desired */
+    background-size: cover; /* Scale the thumbnail image to cover the entire thumbnail area */
+    background-position: center; /* Center the thumbnail image within the thumbnail area */
+    border: 1px solid #000; /* Optional: Add a border to the thumbnail */
+    margin: 10px; /* Optional: Add some margin around the thumbnail */
+  }
