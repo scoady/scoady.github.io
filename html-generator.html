@@ -43,10 +43,18 @@
     
 </head>
 <body>
+    <nav>
+        <a href="index.html">Home</a>
+        <a href="#">About</a>
+        <a href="mailto:stackoverflow22@gmail.com">Contact Me</a>
+        <a href="ai-chat.html">AI Chat</a>
+        <a href="html-generator.html">HTML Generator</a>
+      </nav>
     <div id="apiKeySection">
         <h2>Enter your OpenAI API Key</h2>
         <input type="password" id="apiKeyInput" placeholder="API Key">
         <button id="apiKeySubmit">Submit</button>
+
     </div>
 
     <div id="generatorSection" style="display: none;">
@@ -55,7 +63,8 @@
         <button id="summarizePrompt">Summarize Prompt History</button>
         <button id="toggleHistory">Toggle Prompt History</button>
         <ul id="promptHistory"></ul>
-        <button id="generateHTML" class="btn btn-primary">Generate HTML</button>
+        <button id="generateHTML" aria-busy="false">Generate HTML</button>
+    </div>
         <div id="thumbnailContainer">
             <!-- Thumbnails will be dynamically added here -->
         </div>

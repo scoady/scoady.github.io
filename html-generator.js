@@ -20,63 +20,81 @@ function takeScreenshot() {
 
   
   function appendThumbnail(html, messageId, prompt) {
-    const existingThumbnail = document.querySelector(`.thumbnail[data-message-id="${messageId}"]`);
+    const thumbnailContainer = document.querySelector(`[data-message-id="${messageId}"]`);
   
-    if (existingThumbnail) {
-      const existingIframe = existingThumbnail.querySelector("iframe");
-      existingIframe.srcdoc = html;
-    } else {
-      const thumbnailContainer = document.createElement('div');
-      thumbnailContainer.classList.add('thumbnail');
-      thumbnailContainer.dataset.messageId = messageId;
-  
-      const iframe = document.createElement('iframe');
-      iframe.srcdoc = html;
-      iframe.style.width = '100%';
-      iframe.style.height = '100%';
-      iframe.style.border = 'none';
-      iframe.style.transform = 'scale(0.2)';
-      iframe.style.transform = 'scale(1)';
-
-      const expandButton = document.createElement('button');
-      expandButton.textContent = 'Expand';
-      expandButton.classList.add('expand-button');
-      expandButton.addEventListener('click', () => {
-        const modal = document.getElementById('modal');
-        modal.style.display = 'block';
-        const modalIframe = document.querySelector('#modalContent iframe');
-        modalIframe.srcdoc = html;
-      });
-  
-      const downloadButton = document.createElement('button');
-      downloadButton.textContent = 'Download HTML';
-      downloadButton.classList.add('download-button');
-      downloadButton.addEventListener('click', () => {
-        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `generated-${messageId}.html`;
-        a.click();
-        URL.revokeObjectURL(url);
-      });
-  
-      thumbnailContainer.appendChild(iframe);
-      thumbnailContainer.appendChild(expandButton);
-      thumbnailContainer.appendChild(downloadButton);
-      document.getElementById('thumbnailContainer').appendChild(thumbnailContainer);
-      addCodeFormattedTextPrompt(messageId, prompt);
-
-      // Save the data to localStorage
-      const dataToStore = {
-        messageId,
-        thumbnailUrl: iframe.srcdoc,
-        prompt,
-        html
-      };
-      localStorage.setItem(`generatedHTML-${messageId}`, JSON.stringify(dataToStore));
+    // If thumbnail for message already exists, return without adding another one
+    if (thumbnailContainer) {
+      return;
     }
+  
+    const wrapper = document.createElement('div');
+    wrapper.classList.add('thumbnail-container');
+    wrapper.dataset.messageId = messageId;
+  
+    const thumbnail = document.createElement('div');
+    thumbnail.classList.add('thumbnail');
+  
+    const iframe = document.createElement('iframe');
+    iframe.srcdoc = html;
+    iframe.classList.add('thumbnail-iframe');
+  
+    thumbnail.appendChild(iframe);
+    wrapper.appendChild(thumbnail);
+  
+    const card = document.createElement('article');
+    const header = document.createElement('header');
+    header.textContent = prompt;
+    const body = document.createElement('div');
+    const footer = document.createElement('footer');
+  
+    const expandButton = document.createElement('button');
+    expandButton.innerHTML = '&#x2197;Expand';
+    expandButton.classList.add('expand-button', 'mini-button');
+    expandButton.addEventListener('click', () => {
+      const modal = document.getElementById('modal');
+      modal.style.display = 'block';
+      const modalIframe = document.querySelector('#modalContent iframe');
+      modalIframe.srcdoc = html;
+    });
+  
+    const downloadButton = document.createElement('button');
+    downloadButton.innerHTML = '&#x2193;Download';
+    downloadButton.classList.add('download-button', 'mini-button');
+    downloadButton.addEventListener('click', () => {
+      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `generated-${messageId}.html`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  
+    body.appendChild(expandButton);
+    body.appendChild(downloadButton);
+  
+    card.appendChild(header);
+    card.appendChild(body);
+    card.appendChild(footer);
+  
+    wrapper.appendChild(card);
+    document.getElementById('thumbnailContainer').appendChild(wrapper);
+  
+    // Save the data to localStorage
+    const dataToStore = {
+      messageId,
+      thumbnailUrl: iframe.srcdoc,
+      prompt,
+      html
+    };
+    localStorage.setItem(`generatedHTML-${messageId}`, JSON.stringify(dataToStore));
   }
+  
+  
+  
+  
+  
+  
   
   
   
@@ -85,12 +103,18 @@ function takeScreenshot() {
 
   document.getElementById('closeIframe').addEventListener('click', () => {
     const iframe = document.querySelector('#modalContent iframe');
+    if (!iframe) {
+        console.log('Error: iframe element not found');
+        return;
+    }
     const iframeContent = iframe.contentWindow.document.documentElement.outerHTML;
     const messageId = history[history.length - 1].id;
     const prompt = history[history.length - 1].input;
     appendThumbnail(iframeContent, messageId, prompt);
     document.getElementById('modal').style.display = 'none';
-  });
+});
+
+  
   
   
   
@@ -152,6 +176,9 @@ function generateUUID() {
 }
 
 async function generateHTML(apiKey, prompt, messageId, callback) {
+    document.getElementById('generateHTML').setAttribute('aria-busy', 'true');
+
+    
     const messages = [];
     const currentMessage = {
       id: generateUUID(),
@@ -208,6 +235,9 @@ async function generateHTML(apiKey, prompt, messageId, callback) {
       iframe.srcdoc = html;
       document.getElementById('modal').style.display = 'block';
     
+      document.getElementById('generateHTML').setAttribute('aria-busy', 'false');
+
+
       return html;
   }
   
