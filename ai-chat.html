@@ -10,22 +10,14 @@
   <link rel="stylesheet" href="modal.css">
 </head>
 <body>
-  <!-- Include the nav.html file -->
-  <nav>
-    <a href="index.html">Home</a>
-    <a href="#">About</a>
-    <a href="mailto:stackoverflow22@gmail.com">Contact Me</a>
-    <a href="ai-chat.html">AI Chat</a>
-    <a href="html-generator.html">HTML Generator</a>
-  </nav>  <main>
+  <main>
     <div id="terminal-container">
       <div id="terminal-header"></div>
       <div id="terminal-body">
         <div id="terminal-output"></div>
         <div id="terminal-input">
           <div id="terminal-prompt"></div>
-
-          <textarea id="terminal-textarea" rows="1"></textarea>
+          <input type="text" id="terminal-input-field" autocomplete="off" />
         </div>
       </div>
     </div>
