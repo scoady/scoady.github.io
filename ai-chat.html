@@ -8,47 +8,49 @@
   <link rel="stylesheet" href="chat.css">
   <link rel="stylesheet" href="nav.css">
   <link rel="stylesheet" href="modal.css">
-
-  <!-- Faro SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@grafana/faro-web-sdk@1.12.3/dist/bundle/faro-web-sdk.iife.min.js"></script>
-  
-  <!-- Web Tracing -->
-  <script src="https://cdn.jsdelivr.net/npm/@grafana/faro-web-tracing@1.12.3/dist/bundle/faro-web-tracing.iife.min.js"></script>
-
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      if (window.GrafanaFaroWebSdk && window.GrafanaFaroWebTracing) {
-        console.log('GrafanaFaro SDK and Tracing loaded successfully');
-
-        // Initialize Grafana Faro SDK with tracing
-        const faro = window.GrafanaFaroWebSdk.initializeFaro({
-          url: 'https://faro-collector-prod-us-west-0.grafana.net/collect/779edd50e8f4859570c1bf07567613e2',
+    (function () {
+      var webSdkScript = document.createElement("script");
+    
+      // fetch the latest version of the Web-SDK from the CDN
+      webSdkScript.src =
+        "https://unpkg.com/@grafana/faro-web-sdk@^1.4.0/dist/bundle/faro-web-sdk.iife.js";
+    
+      webSdkScript.onload = () => {
+        window.GrafanaFaroWebSdk.initializeFaro({
+          url: "https://faro-collector-prod-us-west-0.grafana.net/collect/779edd50e8f4859570c1bf07567613e2",
           app: {
-            name: 'scoady-gpt',
-            version: '1.0.0',
-            environment: 'production',
+            name: "scoady-gpt",
+            version: "1.0.0",
+            environment: "production",
           },
-          instrumentations: [
-            ...window.GrafanaFaroWebSdk.getWebInstrumentations(), // Default web instrumentations
-            new window.GrafanaFaroWebTracing.TracingInstrumentation(), // TracingInstrumentation added manually
-          ],
+          
         });
-
-        // Example: Get OpenTelemetry APIs from Faro
-        const { trace, context } = faro.api.getOTEL();
-        const tracer = trace.getTracer('default');
-
-        // Example custom span
-        const span = tracer.startSpan('example-custom-span');
-        context.with(trace.setSpan(context.active(), span), () => {
-          console.log('Executing some traced logic...');
-          span.end();
-        });
-      } else {
-        console.error('GrafanaFaro SDK or Tracing package not loaded.');
-      }
-    });
-  </script>
+    
+    
+        // Load instrumentations at the onLoad event of the web-SDK and after the above configuration.
+        // This is important because we need to ensure that the Web-SDK has been loaded and initialized before we add further instruments!
+        var webTracingScript = document.createElement("script");
+    
+        // fetch the latest version of the Web Tracing package from the CDN
+        webTracingScript.src =
+          "https://unpkg.com/@grafana/faro-web-tracing@^1.4.0/dist/bundle/faro-web-tracing.iife.js";
+    
+        // Initialize, configure (if necessary) and add the the new instrumentation to the already loaded and configured Web-SDK.
+        webTracingScript.onload = () => {
+          window.GrafanaFaroWebSdk.faro.instrumentations.add(
+            new window.GrafanaFaroWebTracing.TracingInstrumentation()
+          );
+        };
+    
+        // Append the Web Tracing script script tag to the HTML page
+        document.head.appendChild(webTracingScript);
+      };
+    
+      // Append the Web-SDK script script tag to the HTML page
+      document.head.appendChild(webSdkScript);
+    })();
+    </script>
 </head>
 <body>
   <main>
