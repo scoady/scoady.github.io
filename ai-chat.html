@@ -13,17 +13,20 @@
   <script src="https://cdn.jsdelivr.net/npm/@grafana/faro-web-sdk@1.12.3/dist/bundle/faro-web-sdk.iife.min.js"></script>
   
   <!-- Initialize Faro SDK after it's loaded -->
+  <script src="https://cdn.jsdelivr.net/npm/@grafana/faro-web-sdk@1.12.3/dist/bundle/faro-web-sdk.iife.min.js"></script>
+  
   <script>
-    window.addEventListener('load', function() {
-      // Check the entire global window object
-      console.log(window); // This will show all the objects loaded in the window
-
-      // Log the GrafanaFaro object to ensure it's loaded
-      if (window.GrafanaFaro) {
+    document.addEventListener('DOMContentLoaded', function () {
+      console.log(window); // Log the window object to debug
+  
+      if (window.GrafanaFaroWebSdk && window.GrafanaFaroWebSdk.initializeFaro) {
         console.log('GrafanaFaro SDK loaded successfully');
         
+        // Log available instrumentations to confirm structure
+        console.log(window.GrafanaFaroWebSdk.getWebInstrumentations());
+  
         // Initialize Grafana Faro SDK
-        GrafanaFaro.initializeFaro({
+        window.GrafanaFaroWebSdk.initializeFaro({
           url: 'https://faro-collector-prod-us-west-0.grafana.net/collect/779edd50e8f4859570c1bf07567613e2', // Your Grafana endpoint
           app: {
             name: 'scoady-gpt',
@@ -31,14 +34,18 @@
             environment: 'production'
           },
           instrumentations: [
-            ...GrafanaFaro.getWebInstrumentations(),
-            new GrafanaFaro.TracingInstrumentation(), // Enable tracing
+            ...window.GrafanaFaroWebSdk.getWebInstrumentations(), // Default web instrumentations
+            // Comment out TracingInstrumentation for now
+            // new window.GrafanaFaroWebSdk.TracingInstrumentation(), // If this is required, re-enable later
           ],
         });
       } else {
         console.error('GrafanaFaro SDK not loaded. Check the window object for available properties.');
       }
     });
+  </script>
+  
+  
   </script>
 
 </head>
