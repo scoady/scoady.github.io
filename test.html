@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- Only load Grafana Faro SDK for testing -->
+  <script src="https://cdn.jsdelivr.net/npm/@grafana/faro-web-sdk@1.12.3/dist/bundle/faro-web-sdk.iife.min.js"></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      console.log(window); // Log the window object to debug
+  
+      if (window.GrafanaFaroWebSdk && window.GrafanaFaroWebSdk.initializeFaro) {
+        console.log('GrafanaFaro SDK loaded successfully');
+        
+        // Log available instrumentations to confirm structure
+        console.log(window.GrafanaFaroWebSdk.getWebInstrumentations());
+  
+        // Initialize Grafana Faro SDK
+        window.GrafanaFaroWebSdk.initializeFaro({
+          url: 'https://faro-collector-prod-us-west-0.grafana.net/collect/779edd50e8f4859570c1bf07567613e2', // Your Grafana endpoint
+          app: {
+            name: 'scoady-gpt',
+            version: '1.0.0',
+            environment: 'production'
+          },
+          instrumentations: [
+            ...window.GrafanaFaroWebSdk.getWebInstrumentations(), // Default web instrumentations
+            // Comment out TracingInstrumentation for now
+            // new window.GrafanaFaroWebSdk.TracingInstrumentation(), // If this is required, re-enable later
+          ],
+        });
+      } else {
+        console.error('GrafanaFaro SDK not loaded. Check the window object for available properties.');
+      }
+    });
+  </script>
+  
+  
+  </script>
+  
+</head>
+<body>
+  <h1>Test Grafana Faro SDK</h1>
+</body>
+</html>
