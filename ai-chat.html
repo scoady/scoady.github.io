@@ -9,25 +9,32 @@
   <link rel="stylesheet" href="nav.css">
   <link rel="stylesheet" href="modal.css">
   
-  <!-- Grafana Faro SDK -->
-  <script type="module">
-    import grafanafaroWebSdk from 'https://cdn.jsdelivr.net/npm/@grafana/faro-web-sdk@1.12.3/+esm'
-    </script>
+  <!-- Use the correct version from the 'bundle' directory -->
+  <script src="https://cdn.jsdelivr.net/npm/@grafana/faro-web-sdk@1.12.3/bundle/faro-web-sdk.min.js"></script>
+
+  <!-- Initialize Faro SDK after it's loaded -->
   <script>
-    // Initialize Grafana Faro SDK
-    GrafanaFaro.initializeFaro({
-      url: 'https://faro-collector-prod-us-west-0.grafana.net/collect/779edd50e8f4859570c1bf07567613e2', // Replace with your endpoint
-      app: {
-        name: 'scoady-gpt',
-        version: '1.0.0',
-        environment: 'production'
-      },
-      instrumentations: [
-        ...GrafanaFaro.getWebInstrumentations(),
-        new GrafanaFaro.TracingInstrumentation(), // Enable tracing
-      ],
+    window.addEventListener('load', function() {
+      if (typeof GrafanaFaro !== 'undefined') {
+        // Initialize Grafana Faro SDK
+        GrafanaFaro.initializeFaro({
+          url: 'https://faro-collector-prod-us-west-0.grafana.net/collect/779edd50e8f4859570c1bf07567613e2', // Replace with your endpoint
+          app: {
+            name: 'scoady-gpt',
+            version: '1.0.0',
+            environment: 'production'
+          },
+          instrumentations: [
+            ...GrafanaFaro.getWebInstrumentations(),
+            new GrafanaFaro.TracingInstrumentation(), // Enable tracing
+          ],
+        });
+      } else {
+        console.error('GrafanaFaro SDK not loaded.');
+      }
     });
   </script>
+
 </head>
 <body>
   <main>
