@@ -10,46 +10,60 @@
   <link rel="stylesheet" href="modal.css">
   <script>
     (function () {
-      var webSdkScript = document.createElement("script");
-    
-      // fetch the latest version of the Web-SDK from the CDN
-      webSdkScript.src =
-        "https://unpkg.com/@grafana/faro-web-sdk@^1.4.0/dist/bundle/faro-web-sdk.iife.js";
-    
-      webSdkScript.onload = () => {
-        window.GrafanaFaroWebSdk.initializeFaro({
-          url: "https://faro-collector-prod-us-west-0.grafana.net/collect/779edd50e8f4859570c1bf07567613e2",
-          app: {
-            name: "scoady-gpt",
-            version: "1.0.0",
-            environment: "production",
-          },
-          
-        });
-    
-    
-        // Load instrumentations at the onLoad event of the web-SDK and after the above configuration.
-        // This is important because we need to ensure that the Web-SDK has been loaded and initialized before we add further instruments!
-        var webTracingScript = document.createElement("script");
-    
-        // fetch the latest version of the Web Tracing package from the CDN
-        webTracingScript.src =
-          "https://unpkg.com/@grafana/faro-web-tracing@^1.4.0/dist/bundle/faro-web-tracing.iife.js";
-    
-        // Initialize, configure (if necessary) and add the the new instrumentation to the already loaded and configured Web-SDK.
-        webTracingScript.onload = () => {
+  // Load the Web SDK script dynamically
+  const webSdkScript = document.createElement("script");
+  webSdkScript.src =
+    "https://unpkg.com/@grafana/faro-web-sdk@^1.4.0/dist/bundle/faro-web-sdk.iife.js";
+
+  webSdkScript.onload = () => {
+    try {
+      const faro = window.GrafanaFaroWebSdk.initializeFaro({
+        url: "https://faro-collector-prod-us-west-0.grafana.net/collect/779edd50e8f4859570c1bf07567613e2",
+        app: {
+          name: "scoady-gpt",
+          version: "1.0.0",
+          environment: "production",
+        },
+      });
+
+      console.log("Faro initialized:", faro);
+
+      // Load the Tracing SDK dynamically after Faro is initialized
+      const webTracingScript = document.createElement("script");
+      webTracingScript.src =
+        "https://unpkg.com/@grafana/faro-web-tracing@^1.4.0/dist/bundle/faro-web-tracing.iife.js";
+
+      webTracingScript.onload = () => {
+        try {
+          const { TracingInstrumentation } = window.GrafanaFaroWebTracing;
           window.GrafanaFaroWebSdk.faro.instrumentations.add(
-            new window.GrafanaFaroWebTracing.TracingInstrumentation()
+            new TracingInstrumentation()
           );
-        };
-    
-        // Append the Web Tracing script script tag to the HTML page
-        document.head.appendChild(webTracingScript);
+          console.log("TracingInstrumentation added.");
+        } catch (error) {
+          console.error("Error adding TracingInstrumentation:", error);
+        }
       };
-    
-      // Append the Web-SDK script script tag to the HTML page
-      document.head.appendChild(webSdkScript);
-    })();
+      new window.GrafanaFaroWebTracing.TracingInstrumentation({
+      sampler: 1.0, // 100% sampling rate
+  });
+      webTracingScript.onerror = () => {
+        console.error("Failed to load the Tracing SDK.");
+      };
+
+      document.head.appendChild(webTracingScript);
+    } catch (error) {
+      console.error("Error initializing Faro SDK:", error);
+    }
+  };
+
+  webSdkScript.onerror = () => {
+    console.error("Failed to load the Faro SDK.");
+  };
+
+  document.head.appendChild(webSdkScript);
+})();
+
     </script>
 </head>
 <body>
