@@ -8,6 +8,25 @@
   <link rel="stylesheet" href="chat.css">
   <link rel="stylesheet" href="nav.css">
   <link rel="stylesheet" href="modal.css">
+  
+  <!-- Grafana Faro SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@grafana/faro-web-sdk@0.1.0/dist/faro-web-sdk.min.js"></script>
+
+  <script>
+    // Initialize Grafana Faro SDK
+    GrafanaFaro.initializeFaro({
+      url: 'https://faro-collector-prod-us-west-0.grafana.net/collect/779edd50e8f4859570c1bf07567613e2', // Replace with your endpoint
+      app: {
+        name: 'scoady-gpt',
+        version: '1.0.0',
+        environment: 'production'
+      },
+      instrumentations: [
+        ...GrafanaFaro.getWebInstrumentations(),
+        new GrafanaFaro.TracingInstrumentation(), // Enable tracing
+      ],
+    });
+  </script>
 </head>
 <body>
   <main>
