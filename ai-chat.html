@@ -9,17 +9,18 @@
   <link rel="stylesheet" href="nav.css">
   <link rel="stylesheet" href="modal.css">
 
-  <!-- Use the iife version from the bundle directory -->
+  <!-- Faro SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@grafana/faro-web-sdk@1.12.3/dist/bundle/faro-web-sdk.iife.min.js"></script>
+  
+  <!-- Web Tracing -->
+  <script src="https://cdn.jsdelivr.net/npm/@grafana/faro-web-tracing@latest/dist/bundle/web-tracing.iife.min.js"></script>
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      console.log(window); // Log the window object to debug
+      if (window.GrafanaFaroWebSdk && window.GrafanaFaroWebTracing) {
+        console.log('GrafanaFaro SDK and Tracing loaded successfully');
 
-      if (window.GrafanaFaroWebSdk && window.GrafanaFaroWebSdk.initializeFaro) {
-        console.log('GrafanaFaro SDK loaded successfully');
-        
-        // Initialize Grafana Faro SDK with tracing enabled
+        // Initialize Grafana Faro SDK with tracing
         window.GrafanaFaroWebSdk.initializeFaro({
           url: 'https://faro-collector-prod-us-west-0.grafana.net/collect/779edd50e8f4859570c1bf07567613e2',
           app: {
@@ -29,11 +30,11 @@
           },
           instrumentations: [
             ...window.GrafanaFaroWebSdk.getWebInstrumentations(),
-            new window.GrafanaFaroWebSdk.TracingInstrumentation(), // Enable tracing
+            ...window.GrafanaFaroWebTracing.getTracingInstrumentations(),
           ],
         });
       } else {
-        console.error('GrafanaFaro SDK not loaded. Check the window object for available properties.');
+        console.error('GrafanaFaro SDK or Tracing package not loaded.');
       }
     });
   </script>
