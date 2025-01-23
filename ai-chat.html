@@ -9,16 +9,22 @@
   <link rel="stylesheet" href="nav.css">
   <link rel="stylesheet" href="modal.css">
   
-  <!-- Use the correct version from the 'bundle' directory -->
+  <!-- Use the iife version from the bundle directory -->
   <script src="https://cdn.jsdelivr.net/npm/@grafana/faro-web-sdk@1.12.3/dist/bundle/faro-web-sdk.iife.min.js"></script>
   
   <!-- Initialize Faro SDK after it's loaded -->
   <script>
     window.addEventListener('load', function() {
-      if (typeof GrafanaFaro !== 'undefined') {
+      // Check the entire global window object
+      console.log(window); // This will show all the objects loaded in the window
+
+      // Log the GrafanaFaro object to ensure it's loaded
+      if (window.GrafanaFaro) {
+        console.log('GrafanaFaro SDK loaded successfully');
+        
         // Initialize Grafana Faro SDK
         GrafanaFaro.initializeFaro({
-          url: 'https://faro-collector-prod-us-west-0.grafana.net/collect/779edd50e8f4859570c1bf07567613e2', // Replace with your endpoint
+          url: 'https://faro-collector-prod-us-west-0.grafana.net/collect/779edd50e8f4859570c1bf07567613e2', // Your Grafana endpoint
           app: {
             name: 'scoady-gpt',
             version: '1.0.0',
@@ -30,7 +36,7 @@
           ],
         });
       } else {
-        console.error('GrafanaFaro SDK not loaded.');
+        console.error('GrafanaFaro SDK not loaded. Check the window object for available properties.');
       }
     });
   </script>
